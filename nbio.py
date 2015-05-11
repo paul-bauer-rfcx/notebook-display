@@ -56,9 +56,9 @@ def wavPlayer(data, rate, scale=False, autoplay=False):
     rate : the data rate in Hz
     scale : if set to True, the audio signal is amplified to cover the full scale.
     """
-    if np.max(abs(data)) > 1 or scale:
-        data = data/np.max(abs(data))
-    data = (2**13*data).astype(np.int16)
+    #if np.max(abs(data)) > 1 or scale:
+    #    data = data/np.max(abs(data))
+    #data = (2**13*data).astype(np.int16)
     
     buffer = BytesIO()
     buffer.write(b'RIFF')
