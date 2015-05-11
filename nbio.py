@@ -41,7 +41,8 @@ def play(I, rate=44100):
 
     c = Converter()
     a = c.html_audio(I)
-    display_html(a)
+
+    display_html(HTML(a))
 
 
 def to_cell(cell, **kwargs):
@@ -301,9 +302,9 @@ code {background-color:green; }
             </img>""".format(urllib.quote(image_encoded), image_type) # width="100%" height="100%"
         return image_tag
 
-    def html_audio(self, wav):
+    def html_audio(self, I):
         bio = BytesIO()
-        wav.write(bio, rate0, I)
+        wav.write(bio, 44100, I)
         bio.seek(0)
         audio_type = "wav"
         sound_encoded = b64encode(bio.read())
