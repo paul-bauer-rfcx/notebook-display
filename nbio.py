@@ -1,7 +1,7 @@
 # utility for displaying things in Ipython
 
 from IPython.display import Image as show_img
-from IPython.display import display_html,HTML #display, HTML as 
+from IPython.display import display_html, HTML, display
 from io import BytesIO
 import numpy as np
 from PIL import Image
@@ -14,6 +14,8 @@ import urllib
 import types
 import sympy
 from itertools import cycle
+import base64, struct
+import sys
 print 'loaded nbio'
 
 
@@ -39,10 +41,64 @@ def play(I, rate=44100):
         I = (I/mx * 8800.).astype('int16')
         print I.max(), I.min()
 
-    c = Converter()
-    a = c.html_audio(I)
+    #c = Converter()
+    #a = c.html_audio(I)
+    wavPlayer(I, rate0)
+    #display_html(HTML(a))
 
-    display_html(HTML(a))
+def wavPlayer(data, rate, scale=False, autoplay=False):
+    """This method will display html 5 player for compatible browser with 
+    embedded base64-encoded WAV audio data.
+
+    Parameters :
+    ------------
+    data : 1d np.ndarray containing the audio data to be played
+    rate : the data rate in Hz
+    scale : if set to True, the audio signal is amplified to cover the full scale.
+    """
+    if np.max(abs(data)) > 1 or scale:
+        data = data/np.max(abs(data))
+    data = (2**13*data).astype(np.int16)
+    
+    buffer = BytesIO()
+    buffer.write(b'RIFF')
+    buffer.write(b'\x00\x00\x00\x00')
+    buffer.write(b'WAVE')
+    
+    buffer.write(b'fmt ')
+    if data.ndim == 1:
+        noc = 1
+    else:
+        noc = data.shape[1]
+    
+    bits = data.dtype.itemsize * 8
+    sbytes = rate*(bits // 8)*noc
+    ba = noc * (bits // 8)
+    buffer.write(struct.pack('<ihHIIHH', 16, 1, noc, rate, sbytes, ba, bits))
+
+    # data chunk
+    buffer.write(b'data')
+    buffer.write(struct.pack('<i', data.nbytes))
+
+    if data.dtype.byteorder == '>' or (data.dtype.byteorder == '=' and sys.byteorder == 'big'):
+        data = data.byteswap()
+
+    buffer.write(data.astype(np.int16).tostring())
+
+    # Determine file size and place it in correct position at start of the file.
+    size = buffer.tell()
+    buffer.seek(4)
+    buffer.write(struct.pack('<i', size-8))
+    
+    val = buffer.getvalue()
+    autoplay = " autoplay=\"autoplay\""*autoplay + ""
+    
+    src = """<audio controls="controls" style="width:600px"{autoplay}>
+      <source controls src="data:audio/wav;base64,{base64}" type="audio/wav" />
+      Your browser does not support the audio element.
+    </audio>""".format(base64=base64.b64encode(val).decode("ascii"), autoplay=autoplay)
+    display(HTML(src))
+
 
 
 def to_cell(cell, **kwargs):
