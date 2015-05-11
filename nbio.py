@@ -39,7 +39,9 @@ def play(I, rate=44100):
         I = (I/mx * 8800.).astype('int16')
         print I.max(), I.min()
 
-    display(display_html(html_audio(wav)))
+    c = Converter()
+    a = c.html_audio(I)
+    display_html(a)
 
 
 def to_cell(cell, **kwargs):
